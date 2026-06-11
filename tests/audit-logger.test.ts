@@ -1,5 +1,6 @@
 // tests/audit-logger.test.ts
 import { describe, it, expect } from "vitest";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { createAuditLogger, AuditEntry } from "@/lib/services/audit-logger";
 
 function fakeDb() {
@@ -21,7 +22,7 @@ function fakeDb() {
 describe("AuditLogger", () => {
   it("writes an entry with actor, action and payload", async () => {
     const db = fakeDb();
-    const audit = createAuditLogger(db as unknown as never, "company-1");
+    const audit = createAuditLogger(db as unknown as SupabaseClient, "company-1");
     await audit.log({
       requisition_id: "req-1",
       actor: "agent",
@@ -34,6 +35,7 @@ describe("AuditLogger", () => {
       requisition_id: "req-1",
       actor: "agent",
       action: "requisition.parsed",
+      payload: { category: "computo" },
     });
   });
 
@@ -41,7 +43,7 @@ describe("AuditLogger", () => {
     const db = {
       from: () => ({ insert: async () => ({ error: { message: "boom" } }) }),
     };
-    const audit = createAuditLogger(db as unknown as never, "company-1");
+    const audit = createAuditLogger(db as unknown as SupabaseClient, "company-1");
     await expect(
       audit.log({ requisition_id: null, actor: "system", action: "x", payload: {} })
     ).rejects.toThrow(/audit/i);
