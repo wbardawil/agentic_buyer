@@ -12,9 +12,9 @@ export const dynamic = "force-dynamic";
 const TABS = ["kpis", "rules", "vendors", "audit", "weights"] as const;
 
 export default async function AdminPage({ searchParams }: {
-  searchParams: Promise<{ tab?: string }>;
+  searchParams: Promise<{ tab?: string; error?: string }>;
 }) {
-  const { tab: rawTab } = await searchParams;
+  const { tab: rawTab, error: errorKey } = await searchParams;
   const tab = (TABS as readonly string[]).includes(rawTab ?? "") ? rawTab! : "kpis";
   const locale = resolveLocale((await cookies()).get("locale")?.value);
   const tenant = await getTenant();
@@ -34,6 +34,12 @@ export default async function AdminPage({ searchParams }: {
           </Link>
         ))}
       </nav>
+
+      {errorKey === "weights_sum" && (
+        <p className="rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-700">
+          {t(locale, "weights_sum_error")}
+        </p>
+      )}
 
       {tab === "kpis" && <Kpis locale={locale} />}
       {tab === "rules" && <Rules locale={locale} currency={tenant.currency} />}

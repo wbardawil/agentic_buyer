@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getDb, COMPANY_ID } from "@/lib/db";
 import { createAuditLogger } from "@/lib/services/audit-logger";
 import { PERSONAS } from "@/lib/personas";
@@ -12,7 +13,8 @@ export async function saveWeights(formData: FormData) {
     rating: Number(formData.get("rating")),
   };
   const sum = weights.price + weights.delivery + weights.terms + weights.rating;
-  if (Math.abs(sum - 1) > 0.001) throw new Error("weights must sum to 1");
+  // banner instead of error page — the weights tab is shown live in the demo
+  if (Math.abs(sum - 1) > 0.001) redirect("/admin?tab=weights&error=weights_sum");
 
   const db = getDb();
   const { error } = await db.from("companies").update({ scoring_weights: weights }).eq("id", COMPANY_ID);
