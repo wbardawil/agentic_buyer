@@ -17,14 +17,23 @@ export function PipelineControls({ requisitionId, status, labels }: {
 
   async function run(step: (typeof STEPS)[number]) {
     setBusy(step.key); setError(null);
-    const res = await fetch(step.url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ requisition_id: requisitionId }),
-    });
-    setBusy(null);
-    if (!res.ok) { setError((await res.json()).error ?? "error"); return; }
-    router.refresh();
+    try {
+      const res = await fetch(step.url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requisition_id: requisitionId }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error ?? `HTTP ${res.status}`);
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError("network_error");
+    } finally {
+      setBusy(null);
+    }
   }
 
   const buttons = [

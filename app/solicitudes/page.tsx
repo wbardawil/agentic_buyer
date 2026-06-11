@@ -29,7 +29,7 @@ export default async function SolicitudesPage() {
               <tr key={r.id} className="border-b last:border-0 hover:bg-slate-50">
                 <td className="px-4 py-2">
                   <Link className="text-blue-700 hover:underline" href={`/solicitudes/${r.id}`}>
-                    {r.raw_text.slice(0, 80)}
+                    {(r.raw_text ?? "").slice(0, 80)}
                   </Link>
                 </td>
                 <td className="px-4 py-2 text-right tabular-nums">

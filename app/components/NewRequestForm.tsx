@@ -14,22 +14,27 @@ export function NewRequestForm({ labels }: { labels: Record<string, string> }) {
 
   async function submit(clarified: boolean) {
     setBusy(true); setError(null);
-    const res = await fetch("/api/requisitions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        raw_text: clarified ? `${rawText}\n[Aclaración] ${answer}` : rawText,
-        budget: budget ? Number(budget) : undefined,
-        need_by: needBy || undefined,
-        clarification_answered: clarified,
-      }),
-    });
-    const data = await res.json();
-    setBusy(false);
-    if (!res.ok) { setError(data.error ?? "error"); return; }
-    if (data.needs_clarification) { setQuestion(data.question); return; }
-    setQuestion(null); setRawText(""); setBudget(""); setNeedBy(""); setAnswer("");
-    router.refresh();
+    try {
+      const res = await fetch("/api/requisitions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          raw_text: clarified ? `${rawText}\n[Aclaración] ${answer}` : rawText,
+          budget: budget ? Number(budget) : undefined,
+          need_by: needBy || undefined,
+          clarification_answered: clarified,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error ?? `HTTP ${res.status}`); return; }
+      if (data.needs_clarification) { setQuestion(data.question); return; }
+      setQuestion(null); setRawText(""); setBudget(""); setNeedBy(""); setAnswer("");
+      router.refresh();
+    } catch {
+      setError("network_error");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -43,7 +48,7 @@ export function NewRequestForm({ labels }: { labels: Record<string, string> }) {
       <div className="mb-2 flex gap-2">
         <input className="w-40 rounded border p-2" type="number" placeholder={labels.form_budget}
           value={budget} onChange={(e) => setBudget(e.target.value)} />
-        <input className="w-44 rounded border p-2" type="date" title={labels.form_need_by}
+        <input className="w-44 rounded border p-2" type="date" title={labels.form_need_by} aria-label={labels.form_need_by}
           value={needBy} onChange={(e) => setNeedBy(e.target.value)} />
         <button
           className="ml-auto rounded bg-slate-900 px-4 py-2 text-white disabled:opacity-50"

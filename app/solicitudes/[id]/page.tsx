@@ -1,3 +1,4 @@
+import { notFound } from "next/navigation";
 import { cookies } from "next/headers";
 import { getDb } from "@/lib/db";
 import { resolveLocale, resolvePersona } from "@/lib/personas";
@@ -16,14 +17,14 @@ export default async function RequisitionDetail({ params }: { params: Promise<{ 
   const db = getDb();
 
   const { data: r } = await db.from("requisitions").select("*").eq("id", id).single();
-  if (!r) return <p>404</p>;
+  if (!r) notFound();
   const { data: audit } = await db.from("audit_log").select("*")
     .eq("requisition_id", id).order("created_at", { ascending: true });
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <h1 className="text-lg font-semibold">{r.raw_text.slice(0, 100)}</h1>
+        <h1 className="text-lg font-semibold">{(r.raw_text ?? "").slice(0, 100)}</h1>
         <StatusBadge status={r.status} locale={locale} />
       </div>
 
@@ -38,11 +39,11 @@ export default async function RequisitionDetail({ params }: { params: Promise<{ 
       {r.policy_result && (
         <section className="rounded-lg border bg-white p-4">
           <h2 className="mb-2 font-semibold">{t(locale, "policy_verdict_title")}:{" "}
-            {t(locale, `policy_${r.policy_result.verdict === "pass" ? "pass" : r.policy_result.verdict}` as MsgKey)}
+            {t(locale, `policy_${r.policy_result.verdict}` as MsgKey)}
           </h2>
           <ul className="list-disc pl-5 text-sm">
-            {(r.policy_result.rules_cited as CitedRule[]).map((c, i) => (
-              <li key={i}>
+            {(r.policy_result.rules_cited as CitedRule[]).map((c) => (
+              <li key={c.rule_code}>
                 <span className="font-mono font-medium">{c.rule_code}</span>{": "}
                 {t(locale, c.reason_key as MsgKey, c.params)}
               </li>
