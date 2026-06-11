@@ -22,7 +22,8 @@ export interface ScoredQuote extends ScorableQuote {
 /** Parses payment terms in es/en/pt. More credit days = better score. */
 export function paymentTermsScore(terms: string): number {
   // prepayment markers: es (anticipo, prepago, contado), en (upfront, prepay, advance), pt (à vista, adiantamento)
-  if (/anticipo|prepago|contado|upfront|prepay|advance|vista|adiantamento/i.test(terms)) return 0.2;
+  // prepayment wins over a day count: "30 días contado" means cash, not credit
+  if (/\b(anticipo|prepago|contado|upfront|prepayment|prepay|advance|vista|adiantamento)\b/i.test(terms)) return 0.2;
   // "30 días" / "30 days" / "30 dias" / "net 30"
   const m = terms.match(/(\d+)\s*d[ií]as?|(\d+)\s*days?|net\s*(\d+)/i);
   if (m) {
@@ -34,6 +35,7 @@ export function paymentTermsScore(terms: string): number {
 
 /** Deterministic weighted scoring — NO LLM (spec rule #1). Ties broken by vendor_id. */
 export function scoreQuotes(quotes: ScorableQuote[], w: ScoringWeights): ScoredQuote[] {
+  if (quotes.length === 0) return [];
   const bestPrice = Math.min(...quotes.map((q) => q.unit_price));
   const bestDays = Math.min(...quotes.map((q) => q.delivery_days));
 
