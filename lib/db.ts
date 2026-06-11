@@ -1,5 +1,7 @@
 import { createClient, SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
 import type { Locale } from "@/lib/types";
+import { LOCALES } from "@/lib/types";
 
 let _db: SupabaseClient | null = null;
 
@@ -17,13 +19,17 @@ export function getDb(): SupabaseClient {
 
 export const COMPANY_ID = "00000000-0000-0000-0000-000000000001";
 
-export interface TenantInfo {
-  name: string;
-  locale: Locale;
-  currency: string;
-  country: string; // 'MX' → CFDI compliance variant in v1
-  scoring_weights: { price: number; delivery: number; terms: number; rating: number };
-}
+const TenantInfoSchema = z.object({
+  name: z.string(),
+  locale: z.enum(LOCALES),
+  currency: z.string(),
+  country: z.string(),
+  scoring_weights: z.object({
+    price: z.number(), delivery: z.number(), terms: z.number(), rating: z.number(),
+  }),
+});
+
+export type TenantInfo = z.infer<typeof TenantInfoSchema>;
 
 /** Tenant context: drives agent output language, currency labeling, and country variants. */
 export async function getTenant(): Promise<TenantInfo> {
@@ -33,5 +39,5 @@ export async function getTenant(): Promise<TenantInfo> {
     .eq("id", COMPANY_ID)
     .single();
   if (error || !data) throw new Error(`tenant not found: ${error?.message}`);
-  return data as TenantInfo;
+  return TenantInfoSchema.parse(data);
 }

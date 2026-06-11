@@ -1,4 +1,5 @@
 create extension if not exists "pgcrypto";
+-- NOTE: the seed script must insert companies.id = '00000000-0000-0000-0000-000000000001' first (lib/db.ts COMPANY_ID).
 
 create table companies (
   id uuid primary key default gen_random_uuid(),
@@ -16,7 +17,8 @@ create table users (
   company_id uuid not null references companies(id),
   name text not null,
   email text not null,
-  role text not null check (role in ('requester','approver','admin'))
+  role text not null check (role in ('requester','approver','admin')),
+  unique (company_id, email)
 );
 
 create table vendors (
@@ -127,7 +129,7 @@ create table baseline_purchases (
 create table audit_log (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references companies(id),
-  requisition_id uuid references requisitions(id),
+  requisition_id uuid references requisitions(id) on delete set null,
   actor text not null,          -- 'agent' | <user uuid> | 'system'
   action text not null,
   payload jsonb not null default '{}',
@@ -146,6 +148,8 @@ create trigger audit_log_no_update before update on audit_log
   for each row execute function forbid_audit_mutation();
 create trigger audit_log_no_delete before delete on audit_log
   for each row execute function forbid_audit_mutation();
+create trigger audit_log_no_truncate before truncate on audit_log
+  for each statement execute function forbid_audit_mutation();
 
 create index idx_audit_req on audit_log(requisition_id, created_at);
 create index idx_req_status on requisitions(company_id, status);
