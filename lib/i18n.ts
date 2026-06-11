@@ -39,6 +39,7 @@ export const dict = {
     audit_title: "Bitácora de auditoría", audit_actor: "Actor", audit_action: "Acción", audit_when: "Fecha",
     po_title: "Orden de Compra", po_number: "Número de OC", po_vendor: "Proveedor", po_total: "Total",
     po_erp_ref: "Referencia ERP", po_issued_at: "Fecha de emisión", po_print: "Imprimir",
+    po_th_item: "Artículo", po_th_qty: "Cantidad",
     could_not_parse_request: "No se pudo interpretar la solicitud; intenta reformularla",
     requests_title: "Mis solicitudes", approvals_title: "Cola de aprobación", empty_queue: "Sin pendientes",
     days_suffix: "días",
@@ -81,6 +82,7 @@ export const dict = {
     audit_title: "Audit log", audit_actor: "Actor", audit_action: "Action", audit_when: "When",
     po_title: "Purchase Order", po_number: "PO number", po_vendor: "Vendor", po_total: "Total",
     po_erp_ref: "ERP reference", po_issued_at: "Issued at", po_print: "Print",
+    po_th_item: "Item", po_th_qty: "Quantity",
     could_not_parse_request: "The request could not be interpreted; please rephrase it",
     requests_title: "My requests", approvals_title: "Approval queue", empty_queue: "Nothing pending",
     days_suffix: "days",
@@ -123,6 +125,7 @@ export const dict = {
     audit_title: "Registro de auditoria", audit_actor: "Ator", audit_action: "Ação", audit_when: "Data",
     po_title: "Ordem de Compra", po_number: "Número da OC", po_vendor: "Fornecedor", po_total: "Total",
     po_erp_ref: "Referência ERP", po_issued_at: "Data de emissão", po_print: "Imprimir",
+    po_th_item: "Item", po_th_qty: "Quantidade",
     could_not_parse_request: "Não foi possível interpretar a solicitação; reformule-a",
     requests_title: "Minhas solicitações", approvals_title: "Fila de aprovação", empty_queue: "Nada pendente",
     days_suffix: "dias",
@@ -140,6 +143,11 @@ export function t(locale: Locale, key: MsgKey, params?: Record<string, string | 
 const NUMBER_LOCALE: Record<Locale, string> = { es: "es-MX", en: "en-US", pt: "pt-BR" };
 
 /** Money always renders with the value's OWN currency — never assume the tenant currency. */
+/** Dates render in the viewer's locale, not the server's runtime locale. */
+export function fmtDate(iso: string, locale: Locale): string {
+  return new Date(iso).toLocaleDateString(NUMBER_LOCALE[locale]);
+}
+
 export function fmtMoney(amount: number, currency: string, locale: Locale): string {
   return new Intl.NumberFormat(NUMBER_LOCALE[locale], { style: "currency", currency }).format(amount);
 }

@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { getDb, getTenant } from "@/lib/db";
 import { resolveLocale } from "@/lib/personas";
-import { t, fmtMoney } from "@/lib/i18n";
+import { t, fmtMoney, fmtDate } from "@/lib/i18n";
 import { PrintButton } from "@/app/components/PrintButton";
 import type { StructuredRequisition } from "@/lib/types";
 
@@ -28,10 +28,10 @@ export default async function POView({ params }: { params: Promise<{ id: string 
   const db = getDb();
   const tenant = await getTenant();
 
-  const { data: poRaw } = await db.from("purchase_orders")
+  const { data: poRaw, error } = await db.from("purchase_orders")
     .select("*, vendors(name, contact_email, tax_id), requisitions(raw_text, structured, need_by)")
     .eq("id", id).single();
-  if (!poRaw) notFound();
+  if (error || !poRaw) notFound();
 
   // Supabase's generic SupabaseClient doesn't know the join shape — cast locally.
   const po = poRaw as typeof poRaw & {
@@ -39,7 +39,8 @@ export default async function POView({ params }: { params: Promise<{ id: string 
     requisitions: RequisitionRow;
   };
 
-  const structured = po.requisitions.structured as StructuredRequisition;
+  const structured = po.requisitions.structured as StructuredRequisition | null;
+  if (!structured) notFound(); // jsonb can be null on malformed historical rows
 
   return (
     <div className="mx-auto max-w-2xl bg-white p-10 shadow print:shadow-none">
@@ -50,7 +51,7 @@ export default async function POView({ params }: { params: Promise<{ id: string 
         </div>
         <div className="text-right text-sm">
           <p className="font-semibold">{tenant.name}</p>
-          <p>{t(locale, "po_issued_at")}: {new Date(po.issued_at).toLocaleDateString()}</p>
+          <p>{t(locale, "po_issued_at")}: {fmtDate(po.issued_at, locale)}</p>
           <p>{t(locale, "po_erp_ref")}: <span className="font-mono">{po.erp_ref}</span></p>
         </div>
       </div>
@@ -63,7 +64,7 @@ export default async function POView({ params }: { params: Promise<{ id: string 
 
       <table className="mb-6 w-full text-sm">
         <thead><tr className="border-b text-left">
-          <th className="py-2">Item</th><th className="text-right">Qty</th>
+          <th className="py-2">{t(locale, "po_th_item")}</th><th className="text-right">{t(locale, "po_th_qty")}</th>
         </tr></thead>
         <tbody>
           {structured.items.map((it, i) => (
