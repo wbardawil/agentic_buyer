@@ -4,6 +4,7 @@ export type SavingsResult =
       baseline_count: number; qty: number; category: string }
   | { counted: false; category: string };
 
+/** @param values must be non-empty — an empty array yields NaN */
 export function median(values: number[]): number {
   const s = [...values].sort((a, b) => a - b);
   const mid = Math.floor(s.length / 2);
