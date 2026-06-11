@@ -34,7 +34,8 @@ export function ApprovalActions({ requisitionId, labels }: {
 
   return (
     <div className="rounded-lg border bg-white p-4">
-      <input className="mb-3 w-full rounded border p-2 text-sm" placeholder="…"
+      <input className="mb-3 w-full rounded border p-2 text-sm"
+        placeholder={labels.comment_placeholder} aria-label={labels.comment_placeholder}
         value={comment} onChange={(e) => setComment(e.target.value)} />
       <div className="flex gap-3">
         <button className="rounded bg-emerald-600 px-5 py-2 font-medium text-white disabled:opacity-50"

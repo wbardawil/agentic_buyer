@@ -22,8 +22,8 @@ export default async function ApprovalDetail({ params }: { params: Promise<{ id:
     .select("*").eq("requisition_id", id).order("created_at", { ascending: false }).limit(1).single();
   if (!r || !rec) notFound();
 
-  const ranked = (rec.scoring.ranked ?? []) as ScoredQuote[];
-  const savings = rec.scoring.savings as SavingsResult | undefined;
+  const ranked = (rec.scoring?.ranked ?? []) as ScoredQuote[];
+  const savings = rec.scoring?.savings as SavingsResult | undefined;
   const winner = ranked[0];
 
   return (
@@ -111,6 +111,7 @@ export default async function ApprovalDetail({ params }: { params: Promise<{ id:
           btn_reject: t(locale, "btn_reject"),
           btn_request_info: t(locale, "btn_request_info"),
           reject_comment_required: t(locale, "reject_comment_required"),
+          comment_placeholder: t(locale, "comment_placeholder"),
         }} />
       )}
     </div>
