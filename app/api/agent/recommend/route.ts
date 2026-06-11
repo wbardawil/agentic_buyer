@@ -69,9 +69,14 @@ export async function POST(req: Request) {
     payload: { weights, ranking: ranked.map(x => ({ vendor: x.vendor_name, total_score: x.total_score, rank: x.rank })) } });
 
   // [F8] DETERMINISTIC — savings vs SAME-CURRENCY baseline (never guessed, no FX in v0)
-  const { data: baseline } = await db.from("baseline_purchases")
+  const { data: baseline, error: blErr } = await db.from("baseline_purchases")
     .select("unit_price").eq("company_id", COMPANY_ID)
     .eq("category", r.category).eq("currency", winner.currency);
+  if (blErr) {
+    // a failed query must not masquerade as "no history" — audit it before falling back
+    await audit.log({ requisition_id, actor: "system", action: "savings.query_failed",
+      payload: { error: blErr.message } });
+  }
   const savings = computeSavings({
     category: r.category, qty,
     winning_unit_price: winner.unit_price,
