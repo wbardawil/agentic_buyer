@@ -4,7 +4,9 @@ export const runtime = "nodejs";
 
 function csvCell(v: unknown): string {
   const s = typeof v === "string" ? v : JSON.stringify(v ?? "");
-  return `"${s.replace(/"/g, '""')}"`;
+  // neutralize spreadsheet formula injection — audit CSVs get opened in Excel
+  const safe = /^[=+@\-\t\r]/.test(s) ? `'${s}` : s;
+  return `"${safe.replace(/"/g, '""')}"`;
 }
 
 export async function GET(req: Request) {
