@@ -29,9 +29,10 @@ const defaultRawCall: RawCall = async (system, user, jsonSchema) => {
     model: MODEL,
     max_tokens: 4096,
     system,
-    // @ts-expect-error structured outputs param newer than SDK types
-    output_config: { format: { type: "json_schema", schema: jsonSchema } },
     messages: [{ role: "user", content: user }],
+    // structured outputs — param newer than the installed SDK types; spread-cast stays
+    // valid whether or not a future SDK upgrade adds the typing
+    ...({ output_config: { format: { type: "json_schema", schema: jsonSchema } } } as object),
   });
   const text = res.content.find((b) => b.type === "text");
   if (!text || text.type !== "text") throw new Error("empty model response");
