@@ -1,3 +1,28 @@
+# compras-agent
+
+Demo-grade AI buying agent (spec.md). Multilingual es/en/pt, multi-currency (MXN first),
+deterministic policy/scoring/savings engines, Claude API for parsing and prose only.
+
+## Setup & Deploy
+
+1. **Environment** — create `.env.local` (and the same three vars in Vercel → Project → Settings → Environment Variables):
+
+   ```
+   ANTHROPIC_API_KEY=sk-ant-...
+   SUPABASE_URL=https://<project-ref>.supabase.co
+   SUPABASE_SERVICE_ROLE_KEY=eyJ...
+   ```
+
+2. **Database** — paste `supabase/migrations/0001_init.sql` into the Supabase SQL editor and run it once.
+
+3. **Seed** — `npm run seed` (idempotent; re-run any time to reset demo data; audit rows survive by design).
+
+4. **Run** — `npm run dev`, or deploy with `vercel --prod`. The demo walkthrough is in `docs/demo-script.md`.
+
+`npm test` runs the unit suites for the deterministic services and the agent JSON helper.
+
+---
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

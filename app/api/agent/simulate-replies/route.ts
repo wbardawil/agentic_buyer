@@ -15,6 +15,10 @@ export async function POST(req: Request) {
 
   const { data: r, error: rErr } = await db.from("requisitions").select("*").eq("id", requisition_id).single();
   if (rErr || !r) return NextResponse.json({ error: "requisition not found" }, { status: 404 });
+  // 'quoted' allowed too: a partial failure can leave some RFQs 'sent' after the first replies landed
+  if (r.status !== "sourcing" && r.status !== "quoted") {
+    return NextResponse.json({ error: `invalid status: ${r.status}` }, { status: 409 });
+  }
   const structured = r.structured as StructuredRequisition;
 
   const { data: rfqs } = await db.from("rfqs")
