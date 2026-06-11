@@ -90,5 +90,11 @@ export async function POST(req: Request) {
       payload: { rfq_id: rfqRow.id, vendor: vendor.name, to: vendor.contact_email, subject: rfqDraft.subject } });
   }
 
+  if (rfqIds.length === 0) {
+    // every draft/insert failed — don't stall the requisition silently
+    await audit.log({ requisition_id, actor: "system", action: "sourcing.all_rfqs_failed",
+      payload: { attempted: selected.length } });
+    return NextResponse.json({ error: "all_rfq_drafts_failed" }, { status: 502 });
+  }
   return NextResponse.json({ rfqs_sent: rfqIds.length });
 }

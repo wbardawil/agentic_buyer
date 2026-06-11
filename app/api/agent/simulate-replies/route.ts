@@ -13,8 +13,8 @@ export async function POST(req: Request) {
   const { requisition_id } = await req.json() as { requisition_id: string };
   if (!requisition_id) return NextResponse.json({ error: "requisition_id_required" }, { status: 400 });
 
-  const { data: r } = await db.from("requisitions").select("*").eq("id", requisition_id).single();
-  if (!r) return NextResponse.json({ error: "requisition not found" }, { status: 404 });
+  const { data: r, error: rErr } = await db.from("requisitions").select("*").eq("id", requisition_id).single();
+  if (rErr || !r) return NextResponse.json({ error: "requisition not found" }, { status: 404 });
   const structured = r.structured as StructuredRequisition;
 
   const { data: rfqs } = await db.from("rfqs")
@@ -50,7 +50,13 @@ export async function POST(req: Request) {
         payload: { rfq_id: rfq.id, error: qErr.message } });
       continue;
     }
-    await db.from("rfqs").update({ status: "replied" }).eq("id", rfq.id);
+    const { error: rfqUpdErr } = await db.from("rfqs").update({ status: "replied" }).eq("id", rfq.id);
+    if (rfqUpdErr) {
+      // rfq still 'sent' would be re-simulated next run, duplicating the quote — fail this one visibly
+      await audit.log({ requisition_id, actor: "system", action: "rfq.update_failed",
+        payload: { rfq_id: rfq.id, error: rfqUpdErr.message } });
+      continue;
+    }
     await audit.log({ requisition_id, actor: "system", action: "quote.received",
       payload: { rfq_id: rfq.id, vendor: (rfq.vendors as { name: string }).name, simulated: true, profile } });
     replies++;
