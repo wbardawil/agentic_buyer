@@ -26,6 +26,9 @@ export async function POST(req: Request) {
     raw_text: string; category_hint?: string; budget?: number;
     need_by?: string; clarification_answered?: boolean;
   };
+  if (!body.raw_text || typeof body.raw_text !== "string") {
+    return NextResponse.json({ error: "raw_text_required" }, { status: 400 });
+  }
 
   // [2] AGENT — intake & structuring (in the tenant's language/currency)
   const tenant = await getTenant();
@@ -77,7 +80,9 @@ export async function POST(req: Request) {
     verdict.verdict === "reject" ? "rejected" :
     verdict.verdict === "flag" ? "flagged" : "sourcing";
 
-  await db.from("requisitions").update({ policy_result: verdict, status }).eq("id", reqRow.id);
+  const { error: updErr } = await db.from("requisitions")
+    .update({ policy_result: verdict, status }).eq("id", reqRow.id);
+  if (updErr) return NextResponse.json({ error: updErr.message }, { status: 500 });
   await audit.log({ requisition_id: reqRow.id, actor: "system",
     action: "policy.evaluated", payload: verdict });
 
